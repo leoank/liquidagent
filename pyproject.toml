@@ -9,8 +9,12 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
   "polars",
+  "litellm",
   "langchain",
-  "laggraph",
+  "langchain-litellm",
+  "langchain-ollama",
+  "langchain-community",
+  "langgraph",
 ]
 
 [project.optional-dependencies]

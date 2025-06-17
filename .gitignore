@@ -175,3 +175,4 @@ cython_debug/
 
 .direnv
 scratch
+.jupyter_ystore.db
