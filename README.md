@@ -24,6 +24,12 @@ We are building an agent that can:
 - [`USPTO`](https://developer.uspto.gov/) public patent data with API access via:
   - Sample key: `gJNDuYDHqyCCBNWo54eOktlaLkinpGEF`
   - Reference: [Amazon Bedrock Healthcare/Life Sciences USPTO Agent](https://github.com/aws-samples/amazon-bedrock-agents-healthcare-lifesciences/tree/b4444fa7606f5ba5d6bd4deb84f15817bba9d560/agents_catalog/14-USPTO-search)
+-  https://github.com/microsoft/magentic-ui Framework 1
+-  https://github.com/microsoft/autogen Framework 2
+-  Or without framework ... 
+
+
+
 
 ## 🧪 Notebooks
 
@@ -56,3 +62,8 @@ This project is a prototype to test and co-develop agentic workflows for chemist
 - Creating CLI commands and modular tools that can later compose into a LangGraph-style agent.
 
 This is an opportunity to explore autonomy, creativity, and design in the context of building a deep, domain-specific research agent for early-stage drug discovery.
+
+
+## Evaluation set
+
+Paired exmaple of extraction from patents and paired exmaples. (from users's end)
