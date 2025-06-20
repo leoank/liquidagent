@@ -179,3 +179,4 @@ scratch
 
 # Add liquid agent config file
 liquid_agent.toml
+CHANGELOG.md
