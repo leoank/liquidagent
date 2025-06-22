@@ -31,7 +31,7 @@
         libList =
           [
             # Add needed packages here
-            pkgs.stdenv.cc.cc
+            mpkgs.stdenv.cc.cc
             pkgs.libGL
             pkgs.glib
           ]
@@ -77,6 +77,7 @@
                 duckdb
                 jq
                 arion
+                mpkgs.awscli2
 
               ] ++ libList;
               venvDir = "./.venv";

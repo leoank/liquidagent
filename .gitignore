@@ -176,3 +176,6 @@ cython_debug/
 .direnv
 scratch
 .jupyter_ystore.db
+
+# Add liquid agent config file
+liquid_agent.toml

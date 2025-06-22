@@ -15,6 +15,8 @@
 # %%
 from langchain_core.messages import HumanMessage
 from langchain_ollama import ChatOllama
+from langgraph.prebuilt import create_react_agent
+from pydantic import BaseModel
 
 # %%
 chat = ChatOllama(model="devstral")
@@ -26,22 +28,22 @@ resp = chat.invoke(messages)
 # %%
 resp
 
-# %%
-from langgraph.prebuilt import create_react_agent
-from pydantic import BaseModel
 
+# %%
 def get_weather(city: str) -> str:
     """Get weather for a given city."""
     return f"It's always sunny in {city}!"
 
+
 class WeatherResponse(BaseModel):
     conditions: str
+
 
 agent = create_react_agent(
     model=chat,
     tools=[get_weather],
     prompt="You are a helpful assistant",
-    response_format=WeatherResponse
+    response_format=WeatherResponse,
 )
 
 # Run the agent

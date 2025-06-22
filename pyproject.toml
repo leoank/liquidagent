@@ -10,11 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
   "polars",
   "litellm",
-  "langchain",
-  "langchain-litellm",
-  "langchain-ollama",
-  "langchain-community",
-  "langgraph",
+  "ollama",
 ]
 
 [project.optional-dependencies]
@@ -74,6 +70,11 @@ biomimir = "liquidagent.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "nbdotrun>=0.1.1",
+]
 
 [tool.jupytext.formats]
 "notebooks/ipynb" = "ipynb"
