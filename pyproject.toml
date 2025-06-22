@@ -17,6 +17,7 @@ dependencies = [
   "langchain-community",
   "langgraph",
   "aiohttp>=3.9.0",
+  "ollama",
 ]
 
 [project.optional-dependencies]
