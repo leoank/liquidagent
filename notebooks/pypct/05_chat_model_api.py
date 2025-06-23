@@ -18,7 +18,7 @@
 # %%
 # | export
 from abc import abstractmethod
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Protocol
 
 from ollama import ChatResponse as OllamaChatResponse
@@ -44,10 +44,24 @@ class ChatModelResponse(OllamaChatResponse):
 
 class ChatModelProtocol(Protocol):
     @abstractmethod
+    def bind_tools(self, tools: list[Tool | Callable]) -> None:
+        self.tools = tools
+        raise NotImplementedError
+
+    @abstractmethod
     def invoke(
         self, messages=[], stream: bool = False
     ) -> ChatModelResponse | Iterator[ChatModelResponse]:
-        pass
+        raise NotImplementedError
+
+    @abstractmethod
+    def agent(
+        self,
+        messages=[],
+        stream=False,
+        available_functions: dict[str, Callable | Tool] = {},
+    ) -> ChatModelResponse | Iterator[ChatModelResponse]:
+        raise NotImplementedError
 
 
 # %%
