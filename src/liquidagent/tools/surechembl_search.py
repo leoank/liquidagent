@@ -15,6 +15,15 @@ SURECHEMBL_BASE_URL = "https://surechembl.org/api/"
 
 
 def get_chemical_id_from_smiles(smiles: str) -> str:
+    """
+    Retrieves the chemical ID from SureChEMBL given a SMILES string.
+
+    Args:
+        smiles (str): The SMILES string of the chemical.
+
+    Returns:
+        str: The chemical ID if found, otherwise an error message.
+    """
     logger.debug(f"Searching SureChEMBL for chemical id: SMILES={smiles}")
     resp = requests.post(
         SURECHEMBL_BASE_URL + "chemical/smiles/",
@@ -32,6 +41,15 @@ def get_chemical_id_from_smiles(smiles: str) -> str:
 
 
 def get_patent_ids_from_chemical_ids(chemical_id_list: list[str]) -> list[str]:
+    """
+    Retrieves patent IDs from SureChEMBL given a list of chemical IDs.
+
+    Args:
+        chemical_id_list (list[str]): A list of chemical IDs.
+
+    Returns:
+        list[str]: A list of patent IDs.
+    """
     logger.debug(
         f"Searching SureChEMBL for patents using chemical ids: {chemical_id_list}"
     )
@@ -55,6 +73,15 @@ def get_patent_ids_from_chemical_ids(chemical_id_list: list[str]) -> list[str]:
 
 
 def get_patent_content_from_patent_id(patent_id: str) -> dict:
+    """
+    Retrieves patent content from SureChEMBL given a patent ID.
+
+    Args:
+        patent_id (str): The patent ID.
+
+    Returns:
+        dict: A dictionary containing the patent's abstracts, descriptions, and claim responses.
+    """
     logger.debug(f"Searching SureChEMBL for patents using patent id: {patent_id}")
     resp = requests.get(
         SURECHEMBL_BASE_URL + f"document/{patent_id}/contents",
@@ -75,6 +102,26 @@ def get_patent_content_from_patent_id(patent_id: str) -> dict:
         "descriptions": descriptions,
         "claim_responses": claim_responses,
     }
+
+
+def get_patents_from_smiles(smiles: str) -> list[dict]:
+    """
+    Retrieves patents from SureChEMBL given a SMILES string.
+
+    Args:
+        smiles (str): The SMILES string of the chemical.
+
+    Returns:
+        list[dict]: A list of dictionaries, each containing the content of a patent.
+    """
+    logger.debug(f"Searching SureChEMBL for patents using smiles: {smiles}")
+    chem_id = get_chemical_id_from_smiles(smiles)
+    patent_id_list = get_patent_ids_from_chemical_ids([chem_id])
+    patents = []
+    for patent_id in patent_id_list:
+        patents.append(get_patent_content_from_patent_id(patent_id))
+
+    return patents
 
 
 # Example usage
