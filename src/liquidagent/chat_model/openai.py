@@ -61,19 +61,15 @@ class OpenAIChatModel(ChatModelProtocol):
         # try parsing function arguments
 
         if oai_message.tool_calls is not None:
-            tool_calls = (
-                [
-                    {
-                        "function": {
-                            "name": tool.function.name,
-                            "arguments": self._parse_oai_argument(
-                                tool.function.arguments
-                            ),
-                        }
+            tool_calls = [
+                {
+                    "function": {
+                        "name": tool.function.name,
+                        "arguments": self._parse_oai_argument(tool.function.arguments),
                     }
-                    for tool in oai_message.tool_calls
-                ],
-            )
+                }
+                for tool in oai_message.tool_calls
+            ]
         else:
             tool_calls = None
 
