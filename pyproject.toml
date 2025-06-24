@@ -18,6 +18,7 @@ dependencies = [
   "langgraph",
   "aiohttp>=3.9.0",
   "ollama",
+  "openai>=1.87.0",
 ]
 
 [project.optional-dependencies]

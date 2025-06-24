@@ -1601,6 +1601,7 @@ dependencies = [
     { name = "langgraph" },
     { name = "litellm" },
     { name = "ollama" },
+    { name = "openai" },
     { name = "polars" },
 ]
 
@@ -1652,6 +1653,7 @@ requires-dist = [
     { name = "litellm" },
     { name = "nbdev", marker = "extra == 'dev'" },
     { name = "ollama" },
+    { name = "openai", specifier = ">=1.87.0" },
     { name = "polars" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "ruff", marker = "extra == 'dev'" },
