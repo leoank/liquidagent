@@ -13,15 +13,14 @@
 # ---
 
 # %%
-from os import name
-
-from liquidagent.chat_model.base import Tool
 from liquidagent.config import (
     LiquidAgentConfig,
     OllamaProviderConfig,
     SupportedModelProviders,
 )
-from liquidagent.utils import get_chat_model
+from liquidagent.tools.simple_chembl_search import search_similar_compounds_sync
+from liquidagent.tools.surechembl_search import get_patents_from_smiles
+from liquidagent.utils import get_chat_model, process_out
 
 # %% [markdown]
 # Testing out the liquidagent api
@@ -37,109 +36,82 @@ config = LiquidAgentConfig(
 
 
 # %%
-def add_two_numbers(a: int, b: int) -> int:
-    """
-    Add two numbers
+# Tools can be manually defined and passed into chat
 
-    Args:
-      a (int): The first number
-      b (int): The second number
+"""
+Search ChEMBL for compounds similar to the input SMILES.
 
-    Returns:
-      int: The sum of the two numbers
-    """
+Args:
+    smiles: SMILES string of the compound to search for
+    threshold: Similarity threshold (0-100, default 100 for exact match)
+    max_results: Max number of results to return (default 20)
+    timeout: Request timeout in seconds
 
-    # The cast is necessary as returned tool call arguments don't always conform exactly to schema
-    # E.g. this would prevent "what is 30 + 12" to produce '3012' instead of 42
-    return int(a) + int(b)
-
-
-def subtract_two_numbers(a: int, b: int) -> int:
-    """
-    Subtract two numbers
-    """
-
-    # The cast is necessary as returned tool call arguments don't always conform exactly to schema
-    return int(a) - int(b)
-
-
-# Tools can still be manually defined and passed into chat
-subtract_two_numbers_tool = {
+Returns:
+    Dictionary containing:
+    - results: List of compounds with ChEMBL IDs, SMILES, similarity scores
+    - total_found: Total number of compounds found
+    - error: Error message if search failed
+"""
+search_similar_compounds_tools = {
     "type": "function",
     "function": {
-        "name": "subtract_two_numbers",
-        "description": "Subtract two numbers",
+        "name": "search_similar_chemical_compounds",
+        "description": "Search ChEMBL for compounds similar to the input SMILES",
         "parameters": {
             "type": "object",
-            "required": ["a", "b"],
+            "required": ["smiles"],
             "properties": {
-                "a": {"type": "integer", "description": "The first number"},
-                "b": {"type": "integer", "description": "The second number"},
+                "smiles": {
+                    "type": "string",
+                    "description": "SMILES string of the compound to search for",
+                },
+            },
+        },
+    },
+}
+get_patents_from_smiles_tool = {
+    "type": "function",
+    "function": {
+        "name": "get_patents_from_smiles",
+        "description": "Search SureChEMBL for patents using the input SMILES",
+        "parameters": {
+            "type": "object",
+            "required": ["smiles"],
+            "properties": {
+                "smiles": {
+                    "type": "string",
+                    "description": "SMILES string of the compound to retrieve patents for",
+                },
             },
         },
     },
 }
 
 available_functions = {
-    "add_two_numbers": add_two_numbers,
-    "subtract_two_numbers": subtract_two_numbers,
+    "get_patents_from_smiles": get_patents_from_smiles,
 }
 
 
 # %%
-def process_out(resp) -> None:
-    for chunk in resp:
-        if chunk.message.tool_calls:
-            # There may be multiple tool calls in the response
-            for tool in chunk.message.tool_calls:
-                # Ensure the function is available, and then call it
-                if function_to_call := available_functions.get(tool.function.name):
-                    print("Calling function:", tool.function.name)
-                    print("Arguments:", tool.function.arguments)
-                    output = function_to_call(**tool.function.arguments)
-                    print("Function output:", output)
-                else:
-                    print("Function", tool.function.name, "not found")
-
-                # Add the function response to messages for the model to use
-                messages.append(chunk.message)
-                messages.append(
-                    {"role": "tool", "content": str(output), "name": tool.function.name}
-                )
-        else:
-            print(chunk.message.content, end="", flush=True)
-
-
-# %%
 llm = get_chat_model(config)
-llm.bind_tools([add_two_numbers, subtract_two_numbers_tool])
+llm.bind_tools([get_patents_from_smiles])
+system_prompt = """
+You are a specialized assistant who can help users retrieve patent information for a given chemical compound using the tools available to you.
+After retrieving patents, only summarize chemically relevant patents for the user
+"""
 messages = [
     {
-        "content": "What is 7 minus 7? Answer this query will available tools",
-        "role": "user",
-    }
-]
-resp = llm.invoke(
-    messages=messages,
-    stream=True,
-)
-process_out(resp)
-
-
-# %%
-resp = llm.invoke(
-    messages=messages,
-    stream=True,
-)
-process_out(resp)
-
-# %%
-messages = [
+        "content": system_prompt,
+        "role": "system",
+    },
     {
-        "content": "What is 7 minus 7? Answer this query will available tools",
+        "content": "Search patents for the chemical compound CC(=O)OC1=CC=CC=C1C(=O)O",
         "role": "user",
-    }
+    },
 ]
-llm.agent(messages, True, available_functions)
+
+# %%
+resp_messages = llm.agent(messages, True, available_functions)
 
 # %%

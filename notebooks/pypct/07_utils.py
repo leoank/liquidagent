@@ -62,6 +62,32 @@ def get_chat_model(
 
 
 # %%
+# | export
+def process_out(resp, available_functions, messages) -> None:
+    for chunk in resp:
+        if chunk.message.tool_calls:
+            # There may be multiple tool calls in the response
+            for tool in chunk.message.tool_calls:
+                # Ensure the function is available, and then call it
+                if function_to_call := available_functions.get(tool.function.name):
+                    print("Calling function:", tool.function.name)
+                    print("Arguments:", tool.function.arguments)
+                    output = function_to_call(**tool.function.arguments)
+                    print("Function output:", output)
+                else:
+                    print("Function", tool.function.name, "not found")
+
+                # Add the function response to messages for the model to use
+                messages.append(chunk.message)
+                messages.append(
+                    {"role": "tool", "content": str(output), "name": tool.function.name}
+                )
+        else:
+            print(chunk.message.content, end="", flush=True)
+            return messages
+
+
+# %%
 # | hide
 import nbdev  # noqa
 

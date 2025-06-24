@@ -17,6 +17,7 @@
 
 # %%
 # | export
+import logging
 from collections.abc import Callable, Iterator
 
 from ollama import ChatResponse as OllamaChatResponse
@@ -24,6 +25,12 @@ from ollama import Client
 
 from liquidagent.chat_model.base import ChatModelProtocol, ChatModelResponse, Tool
 from liquidagent.config import OllamaProviderConfig
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 # %% [markdown]
 # Adding the implementation for Ollama model
@@ -60,10 +67,15 @@ class OllamaChatModel(ChatModelProtocol):
             return map(lambda chunk: self._convert_resp(chunk), resp)
 
     def agent(
-        self, messages=[], stream=False, available_functions: dict[str, Callable] = {}
+        self,
+        messages: list = [],
+        stream=False,
+        available_functions: dict[str, Callable] = {},
     ) -> ChatModelResponse | Iterator[ChatModelResponse]:
+        logger.info(f"Messages len: {len(messages)}")
         response = self.invoke(messages, stream)
         if stream:
+            merged_content = []
             for chunk in response:
                 if chunk.message.tool_calls:
                     # There may be multiple tool calls in the response
@@ -75,7 +87,7 @@ class OllamaChatModel(ChatModelProtocol):
                             print("Calling function:", tool.function.name)
                             print("Arguments:", tool.function.arguments)
                             output = function_to_call(**tool.function.arguments)
-                            print("Function output:", output)
+                            #print("Function output:", output)
                         else:
                             print("Function", tool.function.name, "not found")
 
@@ -88,9 +100,18 @@ class OllamaChatModel(ChatModelProtocol):
                                 "name": tool.function.name,
                             }
                         )
-                        self.agent(messages, stream, available_functions)
+                        return self.agent(messages, True, available_functions)
                 else:
+                    merged_content.append(chunk.message.content)
                     print(chunk.message.content, end="", flush=True)
+            merged_content = "".join(merged_content)
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": merged_content,
+                }
+            )
+            return messages
 
 
 # %%
