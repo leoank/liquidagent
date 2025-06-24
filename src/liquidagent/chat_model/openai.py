@@ -59,18 +59,26 @@ class OpenAIChatModel(ChatModelProtocol):
         else:
             oai_message = resp.choices[0].message
         # try parsing function arguments
-        message = Message(
-            role=oai_message.role,
-            content=oai_message.content,
-            tool_calls=[
-                {
-                    "function": {
-                        "name": tool.function.name,
-                        "arguments": self._parse_oai_argument(tool.function.arguments),
+
+        if oai_message.tool_calls is not None:
+            tool_calls = (
+                [
+                    {
+                        "function": {
+                            "name": tool.function.name,
+                            "arguments": self._parse_oai_argument(
+                                tool.function.arguments
+                            ),
+                        }
                     }
-                }
-                for tool in oai_message.tool_calls
-            ],
+                    for tool in oai_message.tool_calls
+                ],
+            )
+        else:
+            tool_calls = None
+
+        message = Message(
+            role=oai_message.role, content=oai_message.content, tool_calls=tool_calls
         )
         return ChatModelResponse(
             model=resp.model, created_at=str(resp.created), message=message
