@@ -106,11 +106,19 @@ class OpenAIChatModel(ChatModelProtocol):
         available_functions: dict[str, Callable] = {},
     ) -> ChatModelResponse | Iterator[ChatModelResponse]:
         logger.info(f"Messages len: {len(messages)}")
+        for msg in messages:
+            if isinstance(msg, dict):
+                if msg.get("role", None) == "tool":
+                    logger.info(f"Tool name: {msg.get('name')}")
+                    logger.info(f"Tool call Id: {msg.get('tool_call_id')}")
         stream = False
         response = self.invoke(messages, stream)
         if response.message.tool_calls:
             # There may be multiple tool calls in the response
-            for tool in response.message.tool_calls:
+            fixed_message = self._fix_tool_call_message(response.message)
+            messages.append(fixed_message)
+            for i, tool in enumerate(response.message.tool_calls):
+                logger.info(f"Tool call wanted: {tool}")
                 # Ensure the function is available, and then call it
                 if function_to_call := available_functions.get(tool.function.name):
                     if tool.function.arguments == {} or tool.function.arguments is None:
@@ -123,17 +131,25 @@ class OpenAIChatModel(ChatModelProtocol):
                     print("Function", tool.function.name, "not found")
 
                 # Add the function response to messages for the model to use
-                fixed_message = self._fix_tool_call_message(response.message)
-                messages.append(fixed_message)
                 messages.append(
                     {
                         "role": "tool",
                         "content": str(output),
                         "name": tool.function.name,
-                        "tool_call_id": fixed_message["tool_calls"][0]["id"],
+                        "tool_call_id": fixed_message["tool_calls"][i]["id"],
                     }
                 )
-                return self.agent(messages, True, available_functions)
+            return self.agent(messages, True, available_functions)
         else:
             print(response.message.content, end="", flush=True)
+            if "Plan" in response.message.content or "?" in response.message.content:
+                content = "Yes, please proceed!"
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": content,
+                    }
+                )
+                print(content, end="", flush=True)
+                return self.agent(messages, True, available_functions)
         return messages

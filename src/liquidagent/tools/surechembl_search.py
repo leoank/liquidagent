@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 SURECHEMBL_BASE_URL = "https://surechembl.org/api/"
 
 
-def get_chemical_id_from_smiles(smiles: str) -> str:
+def get_chemical_id_from_smiles(smiles: str) -> str | None:
     """
     Retrieves the chemical ID from SureChEMBL given a SMILES string.
 
@@ -36,7 +36,12 @@ def get_chemical_id_from_smiles(smiles: str) -> str:
         return {"error": error_msg}
     data = resp.json()
     logger.debug(f"Data returned from surechembl: {data}")
-    chemical_id = data["data"][smiles]["chemical_id"]
+    try:
+        chemical_id = data["data"][smiles]["chemical_id"]
+    except KeyError as e:
+        logger.info(f"No patent present for: {e}")
+        chemical_id = None
+
     return chemical_id
 
 
@@ -56,7 +61,7 @@ def get_patent_ids_from_chemical_ids(chemical_id_list: list[str]) -> list[str]:
     resp = requests.post(
         SURECHEMBL_BASE_URL + "search/documents_for_structures",
         headers={"Accept": "application/json"},
-        params={"chemicalIds": chemical_id_list, "page": "1", "itemsPerPage": "10"},
+        params={"chemicalIds": chemical_id_list, "page": "1", "itemsPerPage": "3"},
     )
 
     if resp.status_code != 200:
@@ -116,12 +121,33 @@ def get_patents_from_smiles(smiles: str) -> list[dict]:
     """
     logger.debug(f"Searching SureChEMBL for patents using smiles: {smiles}")
     chem_id = get_chemical_id_from_smiles(smiles)
+    if chem_id is None:
+        return []
     patent_id_list = get_patent_ids_from_chemical_ids([chem_id])
     patents = []
     for patent_id in patent_id_list:
         patents.append(get_patent_content_from_patent_id(patent_id))
 
     return patents
+
+
+get_patents_from_smiles_tool = {
+    "type": "function",
+    "function": {
+        "name": "get_patents_from_smiles",
+        "description": "Search SureChEMBL for patents using the input SMILES. This function will return an empty list if no patents found for the given SMILES.",
+        "parameters": {
+            "type": "object",
+            "required": ["smiles"],
+            "properties": {
+                "smiles": {
+                    "type": "string",
+                    "description": "SMILES string of the compound",
+                },
+            },
+        },
+    },
+}
 
 
 # Example usage

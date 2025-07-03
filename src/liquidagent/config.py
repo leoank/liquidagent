@@ -47,7 +47,9 @@ class OpenAIProviderConfig(BaseModel):
 class AnthropicProviderConfig(BaseModel):
     """Configuration for Anthropic models."""
 
-    pass
+    api_key: str
+    base_url: str
+    model: str
 
 
 # %% ../../notebooks/ipynb/04_config_api.ipynb 7

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 CHEMBL_BASE_URL = "https://www.ebi.ac.uk/chembl/api/data"
 
 
-async def search_similar_compounds(
+async def get_structurally_similar_compounds(
     smiles: str, threshold: int = 100, max_results: int = 20, timeout: int = 20
 ) -> Dict[str, Any]:
     """
@@ -107,22 +107,24 @@ async def search_similar_compounds(
         return {"error": error_msg}
 
 
-def search_similar_compounds_sync(
-    smiles: str, threshold: int = 100, max_results: int = 20
+def get_structurally_similar_compounds_sync(
+    smiles: str, threshold: int = 100, max_results: int = 5
 ) -> Dict[str, Any]:
     """
     Synchronous wrapper for the async search function.
     """
     logger.debug("Starting synchronous search")
     try:
-        result = asyncio.run(search_similar_compounds(smiles, threshold, max_results))
+        result = asyncio.run(
+            get_structurally_similar_compounds(smiles, threshold, max_results)
+        )
     except RuntimeError:
         result = None
 
         def run_func():
             nonlocal result
             result = asyncio.run(
-                search_similar_compounds(smiles, threshold, max_results)
+                get_structurally_similar_compounds(smiles, threshold, max_results)
             )
 
         thread = threading.Thread(target=run_func)
@@ -130,6 +132,29 @@ def search_similar_compounds_sync(
         thread.join()
     logger.debug("Completed synchronous search")
     return result
+
+
+get_structurally_similar_compounds_tool = {
+    "type": "function",
+    "function": {
+        "name": "get_structurally_similar_compounds",
+        "description": "Get structurally similar compounds to the input SMILES",
+        "parameters": {
+            "type": "object",
+            "required": ["smiles"],
+            "properties": {
+                "smiles": {
+                    "type": "string",
+                    "description": "SMILES string of the compound to search for",
+                },
+                "threshold": {
+                    "type": "integer",
+                    "description": "Similarity threshold (0-100, default 100 for exact match)",
+                },
+            },
+        },
+    },
+}
 
 
 # Example usage
@@ -144,11 +169,11 @@ if __name__ == "__main__":
     # Async usage
     async def test_async():
         logger.info("Testing async search...")
-        result = await search_similar_compounds(
+        result = await get_structurally_similar_compounds(
             hard_smiles, threshold=90, max_results=5
         )
         # add result of test_smiles
-        result_test = await search_similar_compounds(
+        result_test = await get_structurally_similar_compounds(
             test_smiles, threshold=90, max_results=5
         )
 
@@ -158,7 +183,9 @@ if __name__ == "__main__":
     # Sync usage
     def test_sync():
         logger.info("Testing sync search...")
-        result = search_similar_compounds_sync(hard_smiles, threshold=90, max_results=5)
+        result = get_structurally_similar_compounds_sync(
+            hard_smiles, threshold=90, max_results=5
+        )
         print("Sync search results:", result)
 
     # Run tests
